@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>声必可网关 - 配置管理</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface-hover: #22263a;
+      --border: #2a2e3f;
+      --text: #e4e6ef;
+      --text-dim: #8b8fa3;
+      --primary: #6366f1;
+      --primary-hover: #818cf8;
+      --success: #22c55e;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --radius: 12px;
+      --radius-sm: 8px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── Header ────────────────────── */
+    .header {
+      background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #1e1b4b 100%);
+      padding: 24px 32px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .header h1 {
+      font-size: 20px;
+      font-weight: 600;
+      background: linear-gradient(to right, #a5b4fc, #818cf8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .status-bar {
+      display: flex;
+      gap: 16px;
+      font-size: 13px;
+    }
+
+    .status-dot {
+      display: inline-block;
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      margin-right: 6px;
+      vertical-align: middle;
+    }
+    .status-dot.online { background: var(--success); box-shadow: 0 0 8px var(--success); }
+    .status-dot.offline { background: var(--danger); }
+
+    /* ── Tabs ────────────────────── */
+    .tabs {
+      display: flex;
+      gap: 0;
+      padding: 0 32px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .tab {
+      padding: 14px 24px;
+      cursor: pointer;
+      color: var(--text-dim);
+      font-size: 14px;
+      font-weight: 500;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+    }
+
+    .tab:hover { color: var(--text); }
+    .tab.active {
+      color: var(--primary-hover);
+      border-bottom-color: var(--primary);
+    }
+
+    /* ── Content ────────────────── */
+    .content {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 24px 32px;
+    }
+
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+
+    .card-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* ── Form ────────────────────── */
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-dim);
+      margin-bottom: 6px;
+    }
+
+    input[type="text"], input[type="number"], input[type="password"], select {
+      width: 100%;
+      padding: 10px 14px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-size: 14px;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    input:focus, select:focus {
+      border-color: var(--primary);
+    }
+
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+    .btn-primary:hover { background: var(--primary-hover); }
+
+    .btn-success {
+      background: var(--success);
+      color: white;
+    }
+
+    .btn-danger {
+      background: transparent;
+      color: var(--danger);
+      border: 1px solid var(--danger);
+    }
+    .btn-danger:hover { background: var(--danger); color: white; }
+
+    .btn-sm {
+      padding: 6px 12px;
+      font-size: 12px;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    /* ── Room Tags ────────────────── */
+    .room-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .room-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      font-size: 13px;
+    }
+
+    .room-tag .remove {
+      cursor: pointer;
+      color: var(--text-dim);
+      font-size: 16px;
+      line-height: 1;
+    }
+    .room-tag .remove:hover { color: var(--danger); }
+
+    .room-input-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .room-input-row input { flex: 1; }
+
+    /* ── Device Table ────────────── */
+    .device-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .device-table th {
+      text-align: left;
+      padding: 10px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .device-table td {
+      padding: 10px 12px;
+      font-size: 13px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+
+    .device-table tr:hover {
+      background: var(--surface-hover);
+    }
+
+    .device-table input[type="text"] {
+      width: 100%;
+      min-width: 80px;
+      padding: 6px 10px;
+      font-size: 13px;
+    }
+
+    .device-table select {
+      padding: 6px 10px;
+      font-size: 13px;
+      min-width: 90px;
+    }
+
+    .toggle {
+      position: relative;
+      display: inline-block;
+      width: 40px;
+      height: 22px;
+    }
+
+    .toggle input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .toggle-slider {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: var(--border);
+      border-radius: 11px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    .toggle-slider::before {
+      content: '';
+      position: absolute;
+      width: 18px; height: 18px;
+      left: 2px; bottom: 2px;
+      background: white;
+      border-radius: 50%;
+      transition: 0.3s;
+    }
+
+    .toggle input:checked + .toggle-slider {
+      background: var(--success);
+      box-shadow: 0 0 8px rgba(34, 197, 94, 0.4);
+    }
+
+    .toggle input:checked + .toggle-slider::before {
+      transform: translateX(18px);
+    }
+
+    .entity-id {
+      font-family: 'Courier New', monospace;
+      font-size: 11px;
+      color: var(--text-dim);
+    }
+
+    /* ── Toast ────────────────────── */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      padding: 12px 20px;
+      background: var(--success);
+      color: white;
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      font-weight: 500;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all 0.3s;
+      z-index: 1000;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ── Responsive ───────────────── */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    @media (max-width: 640px) {
+      .form-grid { grid-template-columns: 1fr; }
+      .content { padding: 16px; }
+      .header { padding: 16px; flex-direction: column; gap: 12px; }
+    }
+
+    .domain-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    .domain-badge.light { background: #fef3c7; color: #92400e; }
+    .domain-badge.switch { background: #d1fae5; color: #065f46; }
+    .domain-badge.cover { background: #dbeafe; color: #1e40af; }
+    .domain-badge.climate { background: #fce7f3; color: #9d174d; }
+    .domain-badge.fan { background: #e0e7ff; color: #3730a3; }
+    .domain-badge.sensor, .domain-badge.binary_sensor { background: #f3e8ff; color: #6b21a8; }
+    .domain-badge.scene, .domain-badge.script { background: #fef9c3; color: #854d0e; }
+
+    .search-box {
+      margin-bottom: 16px;
+    }
+    .search-box input {
+      width: 100%;
+      padding: 10px 14px 10px 36px;
+      background: var(--bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238b8fa3' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E") no-repeat 12px center;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-size: 14px;
+      outline: none;
+    }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🔊 声必可网关</h1>
+  <div class="status-bar">
+    <span><span class="status-dot" id="haStatus"></span>HA: <span id="haStatusText">--</span></span>
+    <span><span class="status-dot" id="speakerStatus"></span>音箱: <span id="speakerCount">0</span> 台</span>
+    <span>设备: <span id="deviceCount">0</span> 个</span>
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" data-tab="connection">🔌 连接设置</div>
+  <div class="tab" data-tab="rooms">🏘 房间管理</div>
+  <div class="tab" data-tab="devices">📱 设备管理</div>
+</div>
+
+<div class="content">
+
+  <!-- ── 连接设置 ─── -->
+  <div class="panel active" id="panel-connection">
+    <div class="card" id="haConnectionCard">
+      <div class="card-title">🏠 Home Assistant 连接</div>
+      <div id="addonNotice" style="display:none;padding:12px 16px;background:rgba(99,102,241,0.15);border-radius:8px;margin-bottom:16px;font-size:13px;color:var(--primary-hover);">
+        ✅ Add-on 模式 — HA 连接由 Supervisor 自动管理，无需手动配置
+      </div>
+      <div class="form-grid" id="haFormGrid">
+        <div class="form-group">
+          <label>WebSocket 地址</label>
+          <input type="text" id="haUrl" placeholder="ws://192.168.1.100:8123/api/websocket">
+        </div>
+        <div class="form-group">
+          <label>长期访问令牌</label>
+          <input type="password" id="haToken" placeholder="粘贴你的 Token">
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📡 网关设置</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>本机 IP</label>
+          <input type="text" id="gatewayIp" placeholder="192.168.1.200">
+        </div>
+        <div class="form-group">
+          <label>TCP 端口</label>
+          <input type="number" id="gatewayTcpPort" value="8888">
+        </div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="saveAll()">💾 保存配置</button>
+    </div>
+  </div>
+
+  <!-- ── 房间管理 ─── -->
+  <div class="panel" id="panel-rooms">
+    <div class="card">
+      <div class="card-title">🏘 房间列表</div>
+      <div class="room-tags" id="roomTags"></div>
+      <div class="room-input-row">
+        <input type="text" id="newRoomName" placeholder="输入房间名称" onkeydown="if(event.key==='Enter')addRoom()">
+        <button class="btn btn-primary btn-sm" onclick="addRoom()">+ 添加</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 设备管理 ─── -->
+  <div class="panel" id="panel-devices">
+    <div class="card">
+      <div class="card-title">📱 设备配置</div>
+      <div style="display:flex;gap:12px;margin-bottom:16px;">
+        <button class="btn btn-primary btn-sm" onclick="loadEntities()">🔄 从 HA 刷新实体</button>
+        <button class="btn btn-success btn-sm" onclick="saveAll()">💾 保存</button>
+      </div>
+      <div class="search-box">
+        <input type="text" id="searchInput" placeholder="搜索设备..." oninput="filterDevices()">
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="device-table">
+          <thead>
+            <tr>
+              <th>启用</th>
+              <th>类型</th>
+              <th>原始名称</th>
+              <th>别名</th>
+              <th>房间</th>
+            </tr>
+          </thead>
+          <tbody id="deviceBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  // ── State ──────────────────────────
+  let config = {
+    ha: { url: '', token: '' },
+    gateway: { ip: '', tcpPort: 8888, udpPort: 6666 },
+    rooms: [{ id: 1, name: '默认房间' }],
+    entities: {},
+    filterMode: 'include'
+  };
+
+  let allHaEntities = []; // 从 HA 拉取的全部实体
+
+  // ── Init ───────────────────────────
+  (async function init() {
+    await loadConfig();
+    renderRooms();
+    // 自动从 HA 拉取实体列表
+    await loadEntities(true);
+    refreshStatus();
+    setInterval(refreshStatus, 5000);
+  })();
+
+  // ── Tabs ───────────────────────────
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById('panel-' + tab.dataset.tab).classList.add('active');
+    });
+  });
+
+  // ── API ────────────────────────────
+  async function loadConfig() {
+    try {
+      const resp = await fetch('/api/config');
+      config = await resp.json();
+
+      // Add-on 模式：隐藏 HA 连接表单，显示提示
+      if (config.isAddon) {
+        document.getElementById('addonNotice').style.display = 'block';
+        document.getElementById('haFormGrid').style.display = 'none';
+      } else {
+        document.getElementById('haUrl').value = config.ha?.url || '';
+        document.getElementById('haToken').value = config.ha?.token || '';
+      }
+
+      document.getElementById('gatewayIp').value = config.gateway?.ip || '';
+      document.getElementById('gatewayTcpPort').value = config.gateway?.tcpPort || 8888;
+    } catch (e) {
+      console.error('加载配置失败:', e);
+    }
+  }
+
+  async function saveAll() {
+    // Add-on 模式下不修改 HA 连接信息
+    if (!config.isAddon) {
+      config.ha.url = document.getElementById('haUrl').value;
+      config.ha.token = document.getElementById('haToken').value;
+    }
+    config.gateway.ip = document.getElementById('gatewayIp').value;
+    config.gateway.tcpPort = parseInt(document.getElementById('gatewayTcpPort').value) || 8888;
+
+    // 从设备表格收集配置
+    collectDeviceConfig();
+
+    try {
+      await fetch('/api/config', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(config)
+      });
+      showToast('✅ 配置已保存');
+    } catch (e) {
+      showToast('❌ 保存失败: ' + e.message);
+    }
+  }
+
+  async function loadEntities(silent = false) {
+    try {
+      const resp = await fetch('/api/ha/entities');
+      const data = await resp.json();
+      if (data.error) {
+        if (!silent) showToast('❌ ' + data.error);
+        renderDevices(); // 仍然渲染已配置的设备
+        return;
+      }
+      allHaEntities = data;
+      renderDevices();
+      if (!silent) showToast(`✅ 已加载 ${data.length} 个实体`);
+    } catch (e) {
+      if (!silent) showToast('❌ 加载失败');
+      renderDevices(); // 用已保存的 friendlyName 渲染
+    }
+  }
+
+  async function refreshStatus() {
+    try {
+      const resp = await fetch('/api/status');
+      const status = await resp.json();
+      const haEl = document.getElementById('haStatus');
+      const haText = document.getElementById('haStatusText');
+      if (status.haConnected) {
+        haEl.className = 'status-dot online';
+        haText.textContent = '已连接';
+      } else {
+        haEl.className = 'status-dot offline';
+        haText.textContent = '未连接';
+      }
+      const spEl = document.getElementById('speakerStatus');
+      spEl.className = status.speakerClients > 0 ? 'status-dot online' : 'status-dot offline';
+      document.getElementById('speakerCount').textContent = status.speakerClients;
+      document.getElementById('deviceCount').textContent = status.enabledDevices;
+    } catch (e) { /* ignore */ }
+  }
+
+  // ── Rooms ──────────────────────────
+  function renderRooms() {
+    const container = document.getElementById('roomTags');
+    container.innerHTML = '';
+    (config.rooms || []).forEach((room, idx) => {
+      const tag = document.createElement('div');
+      tag.className = 'room-tag';
+      tag.innerHTML = `${room.name} <span class="remove" onclick="removeRoom(${idx})">×</span>`;
+      container.appendChild(tag);
+    });
+  }
+
+  function addRoom() {
+    const input = document.getElementById('newRoomName');
+    const name = input.value.trim();
+    if (!name) return;
+
+    const maxId = config.rooms.reduce((max, r) => Math.max(max, r.id), 0);
+    config.rooms.push({ id: maxId + 1, name });
+    input.value = '';
+    renderRooms();
+    renderDevices(); // 更新设备表的房间下拉
+    saveAll();
+  }
+
+  function removeRoom(idx) {
+    config.rooms.splice(idx, 1);
+    renderRooms();
+    renderDevices();
+    saveAll();
+  }
+
+  // ── Devices ────────────────────────
+  function renderDevices() {
+    const tbody = document.getElementById('deviceBody');
+    tbody.innerHTML = '';
+
+    // 合并：HA 实体 + 已配置但不在 HA 中的实体
+    const entityMap = new Map();
+    for (const e of allHaEntities) {
+      entityMap.set(e.entity_id, e);
+    }
+    // 确保已配置的实体也显示（用保存的 friendlyName）
+    for (const [eid, ec] of Object.entries(config.entities || {})) {
+      if (!entityMap.has(eid)) {
+        entityMap.set(eid, {
+          entity_id: eid,
+          friendly_name: ec.friendlyName || ec.alias || eid,
+          domain: eid.split('.')[0],
+          state: '?'
+        });
+      }
+    }
+    // 排序：启用的设备优先，然后按域分类，最后按名称
+    const sorted = [...entityMap.entries()].sort((a, b) => {
+      const ecA = (config.entities || {})[a[0]] || {};
+      const ecB = (config.entities || {})[b[0]] || {};
+      const enA = ecA.enabled === true ? 0 : 1;
+      const enB = ecB.enabled === true ? 0 : 1;
+      if (enA !== enB) return enA - enB;
+      if (a[1].domain !== b[1].domain) return a[1].domain.localeCompare(b[1].domain);
+      return (a[1].friendly_name || '').localeCompare(b[1].friendly_name || '');
+    });
+
+    for (const [entityId, entity] of sorted) {
+      const ec = (config.entities || {})[entityId] || {};
+      const domain = entity.domain;
+      const tr = document.createElement('tr');
+      tr.dataset.entityId = entityId;
+      tr.dataset.friendlyName = entity.friendly_name;
+      tr.dataset.search = `${entityId} ${entity.friendly_name} ${ec.alias || ''}`.toLowerCase();
+
+      // 启用开关
+      const enabled = ec.enabled === true;
+      const toggleHtml = `<label class="toggle"><input type="checkbox" ${enabled ? 'checked' : ''} data-field="enabled"><span class="toggle-slider"></span></label>`;
+
+      // 域标签
+      const domainHtml = `<span class="domain-badge ${domain}">${domain}</span>`;
+
+      // 原始名称
+      const nameHtml = `<div>${entity.friendly_name}</div><div class="entity-id">${entityId}</div>`;
+
+      // 别名
+      const aliasHtml = `<input type="text" data-field="alias" value="${ec.alias || ''}" placeholder="${entity.friendly_name}">`;
+
+      // 房间选择
+      let roomOpts = config.rooms.map(r =>
+        `<option value="${r.id}" ${(ec.roomId || 1) === r.id ? 'selected' : ''}>${r.name}</option>`
+      ).join('');
+      const roomHtml = `<select data-field="roomId">${roomOpts}</select>`;
+
+      tr.innerHTML = `<td>${toggleHtml}</td><td>${domainHtml}</td><td>${nameHtml}</td><td>${aliasHtml}</td><td>${roomHtml}</td>`;
+      tbody.appendChild(tr);
+    }
+  }
+
+  function filterDevices() {
+    const q = document.getElementById('searchInput').value.toLowerCase();
+    document.querySelectorAll('#deviceBody tr').forEach(tr => {
+      tr.style.display = tr.dataset.search.includes(q) ? '' : 'none';
+    });
+  }
+
+  function collectDeviceConfig() {
+    const entities = {};
+    document.querySelectorAll('#deviceBody tr').forEach(tr => {
+      const entityId = tr.dataset.entityId;
+      const enabled = tr.querySelector('[data-field="enabled"]').checked;
+      const alias = tr.querySelector('[data-field="alias"]').value.trim();
+      const roomId = parseInt(tr.querySelector('[data-field="roomId"]').value) || 1;
+      // 保存 friendlyName 以便下次无 HA 连接时也能正确显示
+      const friendlyName = tr.dataset.friendlyName || entityId;
+      entities[entityId] = { enabled, alias, roomId, friendlyName };
+    });
+    config.entities = entities;
+  }
+
+  // ── Toast ──────────────────────────
+  function showToast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 2500);
+  }
+</script>
+
+</body>
+</html>

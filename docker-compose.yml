@@ -1,0 +1,19 @@
+version: "3.8"
+
+services:
+  aispeaker-gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile.standalone
+    container_name: aispeaker-gateway
+    restart: unless-stopped
+    network_mode: host    # UDP 广播发现需要宿主机网络
+    volumes:
+      - ./config.json:/app/config.json
+    environment:
+      - NODE_ENV=production
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"   # Docker 日志最大 10MB
+        max-file: "3"     # 保留 3 个日志文件

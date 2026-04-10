@@ -1,0 +1,16 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+COPY package.json package-lock.json* ./
+RUN npm install --production --no-optional && npm cache clean --force
+
+COPY src/ ./src/
+
+# 数据目录
+VOLUME /app/data
+
+# 默认端口
+EXPOSE 3000 8888/tcp 6666/udp
+
+CMD ["node", "src/index.js"]

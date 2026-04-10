@@ -1,0 +1,45 @@
+name: "声必可网关 (AISpeaker Gateway)"
+version: "1.0.0"
+slug: "aispeaker_gateway"
+description: "将 Home Assistant 设备桥接至声必可智能音箱，支持语音控制灯光、开关、窗帘、空调等设备"
+url: "https://github.com/yuanxin32323/aispeaker-gateway"
+
+# 支持架构
+arch:
+  - aarch64
+  - amd64
+  - armv7
+
+# 启动阶段
+startup: application
+boot: auto
+
+# 需要宿主机网络（UDP 广播发现）
+host_network: true
+
+# HA API 访问
+homeassistant_api: true
+hassio_api: true
+auth_api: true
+
+# Ingress — 嵌入 HA 侧边栏
+ingress: true
+ingress_port: 3000
+panel_icon: "mdi:speaker"
+panel_title: "声必可网关"
+
+# 用户可配置选项
+options:
+  tcp_port: 8888
+  udp_port: 6666
+  log_level: "info"
+
+schema:
+  tcp_port: "port"
+  udp_port: "port"
+  log_level: "list(debug|info|warn|error)"
+
+# 数据持久化
+map:
+  - type: data
+    read_only: false

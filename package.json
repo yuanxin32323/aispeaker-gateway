@@ -1,0 +1,14 @@
+{
+  "name": "aispeaker-gateway",
+  "version": "1.0.0",
+  "description": "声必可网关 — Home Assistant 设备桥接",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "ws": "^8.16.0"
+  }
+}
