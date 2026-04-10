@@ -106,8 +106,23 @@ async function main() {
     udpPort: config.gateway.udpPort
   });
 
-  await tcpServer.start();
-  await udpServer.start();
+  // 逐个启动，任何一个失败都先清理已启动的服务
+  try {
+    await tcpServer.start();
+  } catch (e) {
+    log.error('Main', `TCP 启动失败: ${e.message}`);
+    haClient.disconnect();
+    throw e;
+  }
+
+  try {
+    await udpServer.start();
+  } catch (e) {
+    log.error('Main', `UDP 启动失败: ${e.message}`);
+    tcpServer.stop();
+    haClient.disconnect();
+    throw e;
+  }
 
   // 5. 启动 Web 配置界面
   const webServer = new WebServer({
