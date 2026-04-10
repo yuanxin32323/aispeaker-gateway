@@ -13,6 +13,7 @@ arch:
 # 启动阶段
 startup: application
 boot: auto
+init: false
 
 # 需要宿主机网络（UDP 广播发现）
 host_network: true
