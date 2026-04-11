@@ -10,7 +10,7 @@ on:
   workflow_dispatch:  # 手动触发
 
 env:
-  REGISTRY: registry.cn-hangzhou.aliyuncs.com
+  REGISTRY: crpi-f5kd64keui5oedie.cn-hangzhou.personal.cr.aliyuncs.com
   IMAGE_NAME: yuanxin32323/aispeaker-gateway
 
 jobs:

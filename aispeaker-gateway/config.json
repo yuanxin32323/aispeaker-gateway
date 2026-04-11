@@ -4,7 +4,7 @@
   "slug": "aispeaker_gateway",
   "description": "将 Home Assistant 设备桥接至声必可智能音箱，支持语音控制灯光、开关、窗帘、空调等设备",
   "url": "https://github.com/yuanxin32323/aispeaker-gateway",
-  "image": "registry.cn-hangzhou.aliyuncs.com/yuanxin32323/aispeaker-gateway-{arch}",
+  "image": "crpi-f5kd64keui5oedie.cn-hangzhou.personal.cr.aliyuncs.com/yuanxin32323/aispeaker-gateway-{arch}",
   "arch": [
     "aarch64",
     "amd64"
