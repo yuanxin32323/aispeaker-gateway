@@ -9,6 +9,7 @@ COPY package.json package-lock.json* ./
 RUN npm install --production --no-optional && npm cache clean --force
 
 COPY src/ ./src/
+COPY config.json ./
 
 # 复制启动脚本
 COPY run.sh /run.sh
