@@ -477,6 +477,20 @@
 <div class="toast" id="toast"></div>
 
 <script>
+  // ── Ingress 路径检测 ────────────────
+  // Ingress URL 示例: /api/hassio_ingress/<token>/
+  // 需要提取基础路径，让 API 请求走正确的 Ingress 通道
+  const basePath = (() => {
+    const path = window.location.pathname;
+    // 如果路径包含 /api/hassio_ingress/xxx/ 则提取为基础路径
+    const match = path.match(/(\/api\/hassio_ingress\/[^/]+)/);
+    return match ? match[1] : '';
+  })();
+
+  function apiUrl(path) {
+    return basePath + path;
+  }
+
   // ── State ──────────────────────────
   let config = {
     ha: { url: '', token: '' },
@@ -511,7 +525,7 @@
   // ── API ────────────────────────────
   async function loadConfig() {
     try {
-      const resp = await fetch('/api/config');
+      const resp = await fetch(apiUrl('/api/config'));
       config = await resp.json();
 
       // Add-on 模式：隐藏 HA 连接表单，显示提示
@@ -543,7 +557,7 @@
     collectDeviceConfig();
 
     try {
-      await fetch('/api/config', {
+      await fetch(apiUrl('/api/config'), {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(config)
@@ -556,7 +570,7 @@
 
   async function loadEntities(silent = false) {
     try {
-      const resp = await fetch('/api/ha/entities');
+      const resp = await fetch(apiUrl('/api/ha/entities'));
       const data = await resp.json();
       if (data.error) {
         if (!silent) showToast('❌ ' + data.error);
@@ -574,7 +588,7 @@
 
   async function refreshStatus() {
     try {
-      const resp = await fetch('/api/status');
+      const resp = await fetch(apiUrl('/api/status'));
       const status = await resp.json();
       const haEl = document.getElementById('haStatus');
       const haText = document.getElementById('haStatusText');
