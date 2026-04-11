@@ -35,23 +35,20 @@ class WebServer {
   _setupRoutes() {
     this.app.use(express.json());
 
-    // Ingress 路径前缀中间件
+    // Ingress 路径前缀中间件 — 去掉 ingress 前缀，让后续路由正常匹配
     this.app.use((req, res, next) => {
       // HA Ingress 会设置 X-Ingress-Path 头
       const ingressPath = req.headers['x-ingress-path'] || '';
       req.ingressPath = ingressPath;
+      // 去掉 ingress 前缀后再匹配路由
+      if (ingressPath && req.url.startsWith(ingressPath)) {
+        req.url = req.url.substring(ingressPath.length) || '/';
+      }
       next();
     });
 
     // 静态文件
-    this.app.use((req, res, next) => {
-      // 去掉 ingress 前缀后再匹配静态文件
-      const ingressPath = req.ingressPath || '';
-      if (ingressPath && req.path.startsWith(ingressPath)) {
-        req.url = req.url.substring(ingressPath.length) || '/';
-      }
-      next();
-    }, express.static(path.join(__dirname, 'public')));
+    this.app.use(express.static(path.join(__dirname, 'public')));
 
     // 获取配置
     this.app.get('/api/config', (req, res) => {
