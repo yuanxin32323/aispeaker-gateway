@@ -159,19 +159,26 @@ class HaClient extends EventEmitter {
     if (!this._shouldReconnect) return;
     if (this._reconnectTimer) return;
 
-    log.debug('HA', '5 秒后重连...');
+    // 递增退避: 5s → 10s → 20s → 30s max
+    this._reconnectAttempt = (this._reconnectAttempt || 0) + 1;
+    const delay = Math.min(5000 * this._reconnectAttempt, 30000);
+    log.info('HA', `${delay / 1000} 秒后重连 (第 ${this._reconnectAttempt} 次)...`);
+
     this._reconnectTimer = setTimeout(async () => {
       this._reconnectTimer = null;
       try {
         await this.connect();
-        // 重连成功后重新订阅并通知下游刷新状态
+        // 重连成功，重置计数器
+        this._reconnectAttempt = 0;
         await this.subscribeStateChanges();
         log.info('HA', '重连成功，已重新订阅状态变更');
         this.emit('reconnected');
       } catch (e) {
         log.warn('HA', '重连失败:', e.message);
+        // 失败后继续尝试重连
+        this._scheduleReconnect();
       }
-    }, 5000);
+    }, delay);
   }
 
   /**
