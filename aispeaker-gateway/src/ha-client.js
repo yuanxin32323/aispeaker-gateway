@@ -11,6 +11,7 @@
 
 const WebSocket = require('ws');
 const EventEmitter = require('events');
+const log = require('./logger');
 
 class HaClient extends EventEmitter {
   /**
@@ -44,12 +45,12 @@ class HaClient extends EventEmitter {
       // 清理旧连接
       this._cleanup();
 
-      console.log(`[HA] 正在连接 ${this.url}...`);
+      log.info('HA', `正在连接 ${this.url}...`);
       this.ws = new WebSocket(this.url);
       let authResolved = false;
 
       this.ws.on('open', () => {
-        console.log('[HA] WebSocket 已连接');
+        log.debug('HA', 'WebSocket 已连接');
       });
 
       this.ws.on('message', (raw) => {
@@ -70,7 +71,7 @@ class HaClient extends EventEmitter {
         }
 
         if (msg.type === 'auth_ok') {
-          console.log(`[HA] 认证成功, HA 版本: ${msg.ha_version}`);
+          log.info('HA', `认证成功, HA 版本: ${msg.ha_version}`);
           this._connected = true;
           if (!authResolved) {
             authResolved = true;
@@ -81,7 +82,7 @@ class HaClient extends EventEmitter {
         }
 
         if (msg.type === 'auth_invalid') {
-          console.error('[HA] 认证失败:', msg.message);
+          log.error('HA', '认证失败:', msg.message);
           if (!authResolved) {
             authResolved = true;
             reject(new Error('HA 认证失败: ' + msg.message));
@@ -108,7 +109,7 @@ class HaClient extends EventEmitter {
       });
 
       this.ws.on('close', () => {
-        console.warn('[HA] WebSocket 已断开');
+        log.warn('HA', 'WebSocket 已断开');
         const wasConnected = this._connected;
         this._connected = false;
         // 拒绝所有等待中的请求
@@ -120,7 +121,7 @@ class HaClient extends EventEmitter {
       });
 
       this.ws.on('error', (err) => {
-        console.error('[HA] WebSocket 错误:', err.message);
+        log.error('HA', 'WebSocket 错误:', err.message);
         if (!authResolved) {
           authResolved = true;
           reject(err);
@@ -158,17 +159,17 @@ class HaClient extends EventEmitter {
     if (!this._shouldReconnect) return;
     if (this._reconnectTimer) return;
 
-    console.log('[HA] 5 秒后重连...');
+    log.debug('HA', '5 秒后重连...');
     this._reconnectTimer = setTimeout(async () => {
       this._reconnectTimer = null;
       try {
         await this.connect();
         // 重连成功后重新订阅并通知下游刷新状态
         await this.subscribeStateChanges();
-        console.log('[HA] 重连成功，已重新订阅状态变更');
+        log.info('HA', '重连成功，已重新订阅状态变更');
         this.emit('reconnected');
       } catch (e) {
-        console.error('[HA] 重连失败:', e.message);
+        log.warn('HA', '重连失败:', e.message);
       }
     }, 5000);
   }

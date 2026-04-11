@@ -6,6 +6,7 @@
 
 const net = require('net');
 const { buildPackage, parseBuffer } = require('./protocol');
+const log = require('../logger');
 
 /** 每个包之间的最小发送间隔(ms)，防止音箱端粘包 */
 const WRITE_INTERVAL_MS = 100;
@@ -35,14 +36,14 @@ class TcpServer {
 
       this.server.on('error', (err) => {
         if (err.code === 'EADDRINUSE') {
-          console.error(`[TCP] ❌ 端口 ${this.port} 已被占用！请检查是否有其他程序（如 HA 集成）在使用此端口`);
-          console.error('[TCP] 提示: 可修改 config.json 中的 gateway.tcpPort 换一个端口');
+          log.error('TCP', `❗ 端口 ${this.port} 已被占用！请检查是否有其他程序（如 HA 集成）在使用此端口`);
+          log.error('TCP', '提示: 可修改 config.json 中的 gateway.tcpPort 换一个端口');
         }
         reject(err);
       });
 
       this.server.listen(this.port, '0.0.0.0', () => {
-        console.log(`[TCP] 服务已启动，监听端口 ${this.port}`);
+        log.info('TCP', `服务已启动，监听端口 ${this.port}`);
         resolve();
       });
     });
@@ -50,7 +51,7 @@ class TcpServer {
 
   _onConnection(socket) {
     const addr = `${socket.remoteAddress}:${socket.remotePort}`;
-    console.log(`[TCP] 客户端已连接: ${addr}`);
+    log.debug('TCP', `客户端已连接: ${addr}`);
     this.clients.set(socket, { queue: [], flushTimer: null, lastWriteTime: 0 });
 
     let buffer = Buffer.alloc(0);
@@ -66,14 +67,14 @@ class TcpServer {
     });
 
     socket.on('close', () => {
-      console.log(`[TCP] 客户端已断开: ${addr}`);
+      log.debug('TCP', `客户端已断开: ${addr}`);
       const cs = this.clients.get(socket);
       if (cs && cs.flushTimer) clearTimeout(cs.flushTimer);
       this.clients.delete(socket);
     });
 
     socket.on('error', (err) => {
-      console.warn(`[TCP] 连接错误 ${addr}:`, err.message);
+      log.warn('TCP', `连接错误 ${addr}:`, err.message);
       const cs = this.clients.get(socket);
       if (cs && cs.flushTimer) clearTimeout(cs.flushTimer);
       this.clients.delete(socket);
@@ -141,11 +142,11 @@ class TcpServer {
       return;
     }
 
-    console.log(`[TCP] 收到: ${msgType} (cmd=${cmd})`);
+    log.debug('TCP', `收到: ${msgType} (cmd=${cmd})`);
 
     if (msgType === 'REQUEST_DEVICE') {
       const devices = this.deviceManager.getDevices();
-      console.log(`[TCP] 返回设备列表: ${devices.length} 个`);
+      log.debug('TCP', `返回设备列表: ${devices.length} 个`);
       const resp = buildPackage('0006', {
         type: 'RESPONSE_DEVICE',
         deviceData: devices
@@ -154,7 +155,7 @@ class TcpServer {
 
     } else if (msgType === 'REQUEST_ROOM') {
       const rooms = this.deviceManager.getRooms();
-      console.log(`[TCP] 返回房间列表: ${rooms.length} 个`, rooms);
+      log.debug('TCP', `返回房间列表: ${rooms.length} 个`, rooms);
       const resp = buildPackage('000a', {
         type: 'RESPONSE_ROOM',
         data: rooms
@@ -177,9 +178,9 @@ class TcpServer {
       socket.write(resp);
 
     } else if (msgType === 'REQUEST_CONTROL') {
-      console.log('[TCP] 收到控制指令:', JSON.stringify(data));
+      log.debug('TCP', '收到控制指令:', JSON.stringify(data));
       const results = await this.deviceManager.handleControl(data);
-      console.log('[TCP] 控制结果:', JSON.stringify(results));
+      log.debug('TCP', '控制结果:', JSON.stringify(results));
 
       // 为每个受控设备排队发送独立的响应
       for (const result of results) {

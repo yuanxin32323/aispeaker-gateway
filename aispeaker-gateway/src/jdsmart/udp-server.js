@@ -5,6 +5,7 @@
 'use strict';
 
 const dgram = require('dgram');
+const log = require('../logger');
 
 class UdpServer {
   /**
@@ -28,7 +29,7 @@ class UdpServer {
       this.server = dgram.createSocket({ type: 'udp4', reuseAddr: true });
 
       this.server.on('error', (err) => {
-        console.error('[UDP] 服务错误:', err.message);
+        log.error('UDP', '服务错误:', err.message);
         reject(err);
       });
 
@@ -37,7 +38,7 @@ class UdpServer {
           const data = JSON.parse(msg.toString('utf-8'));
           if (data.type === 'REQUEST_TCP' || data.Type === 'REQUEST_TCP') {
             const sn = data.sn || data.Sn || '';
-            console.log(`[UDP] 收到音箱发现请求 from ${rinfo.address}:${rinfo.port}, SN=${sn}`);
+            log.debug('UDP', `收到音箱发现请求 from ${rinfo.address}:${rinfo.port}, SN=${sn}`);
             this._sendResponse(rinfo.address);
           }
         } catch (e) {
@@ -47,7 +48,7 @@ class UdpServer {
 
       this.server.bind(this.udpPort, '0.0.0.0', () => {
         this.server.setBroadcast(true);
-        console.log(`[UDP] 发现服务已启动，监听端口 ${this.udpPort}`);
+        log.info('UDP', `发现服务已启动，监听端口 ${this.udpPort}`);
         
         // 启动定时广播
         this._timer = setInterval(() => this._broadcastResponse(), this.broadcastInterval);
@@ -73,7 +74,7 @@ class UdpServer {
     const resp = Buffer.from(this._buildResponse(), 'utf-8');
     // 单播给发包的音箱
     this.server.send(resp, 0, resp.length, 7777, speakerIp, (err) => {
-      if (err) console.warn('[UDP] 单播失败:', err.message);
+      if (err) log.warn('UDP', '单播失败:', err.message);
     });
     // 广播备用
     try {
@@ -87,7 +88,7 @@ class UdpServer {
     try {
       this.server.send(resp, 0, resp.length, 7777, '255.255.255.255');
     } catch (e) {
-      console.warn('[UDP] 定时广播失败:', e.message);
+      log.warn('UDP', '定时广播失败:', e.message);
     }
   }
 

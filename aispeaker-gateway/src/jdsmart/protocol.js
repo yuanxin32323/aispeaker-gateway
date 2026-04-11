@@ -9,6 +9,8 @@
 
 'use strict';
 
+const log = require('../logger');
+
 /**
  * 构建 V2 协议数据包
  * @param {string} cmdHex - 2字节命令码 (如 "0006")
@@ -89,7 +91,7 @@ function parseBuffer(buffer) {
     }
 
     if (expectedCheck !== packet[packet.length - 1]) {
-      console.warn('[protocol] 数据包校验和错误');
+      log.debug('Protocol', '数据包校验和错误');
       offset += 1; // 跳过这个 0xAB，继续搜索
       continue;
     }
@@ -102,7 +104,7 @@ function parseBuffer(buffer) {
       const data = JSON.parse(jsonBuf.toString('utf-8'));
       packets.push({ cmd, data });
     } catch (e) {
-      console.error('[protocol] JSON 解析失败:', e.message);
+      log.debug('Protocol', 'JSON 解析失败:', e.message);
     }
 
     offset += totalLen;

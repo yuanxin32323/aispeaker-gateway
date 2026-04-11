@@ -10,6 +10,8 @@
 
 'use strict';
 
+const log = require('./logger');
+
 // 声必可设备类型常量
 const DEV_TYPES = {
   CW_LAMP: 'CW_LAMP',
@@ -111,7 +113,7 @@ class DeviceManager {
 
       if (newState) {
         const deviceState = this._entityToDeviceState(entityId, newState);
-        console.log(`[DeviceManager] 状态变更推送: ${entityId}`, deviceState);
+        log.debug('DeviceManager', `状态变更推送: ${entityId}`, deviceState);
         if (this.onPushState) {
           this.onPushState(entityId, deviceState);
         }
@@ -120,7 +122,7 @@ class DeviceManager {
 
     // 重连后自动刷新全量状态缓存（订阅已在 ha-client 内部完成）
     this.ha.on('reconnected', async () => {
-      console.log('[DeviceManager] HA 已重连，刷新全量状态缓存...');
+      log.debug('DeviceManager', 'HA 已重连，刷新全量状态缓存...');
       await this._fetchAllStates();
     });
   }
@@ -134,9 +136,9 @@ class DeviceManager {
       for (const s of states) {
         this.stateCache.set(s.entity_id, s);
       }
-      console.log(`[DeviceManager] 已缓存 ${this.stateCache.size} 个实体状态`);
+      log.info('DeviceManager', `已缓存 ${this.stateCache.size} 个实体状态`);
     } catch (e) {
-      console.error('[DeviceManager] 拉取状态失败:', e.message);
+      log.error('DeviceManager', '拉取状态失败:', e.message);
     }
   }
 
@@ -318,7 +320,7 @@ class DeviceManager {
       const entityId = ctrl.id || ctrl.Id;
       if (!entityId) continue;
       if (!this._isEntityEnabled(entityId)) {
-        console.warn(`[DeviceManager] 拒绝控制未授权实体: ${entityId}`);
+        log.warn('DeviceManager', `拒绝控制未授权实体: ${entityId}`);
         continue;
       }
 
@@ -418,7 +420,7 @@ class DeviceManager {
         try {
           await this.ha.callService(svcDomain, svcName, svcData);
         } catch (e) {
-          console.error(`[DeviceManager] 调用服务失败: ${svcDomain}.${svcName}`, e.message);
+          log.error('DeviceManager', `调用服务失败: ${svcDomain}.${svcName}`, e.message);
         }
       }
 
