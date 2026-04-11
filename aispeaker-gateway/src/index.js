@@ -28,11 +28,9 @@ const RESTART_WINDOW_MS = 60000;
 let restartTimes = [];
 
 async function main() {
-  console.log('╔═══════════════════════════════════════╗');
-  console.log('║   声必可网关 (AISpeaker Gateway)       ║');
-  console.log('║   Node.js v1.0.0                      ║');
-  console.log(`║   模式: ${IS_ADDON ? 'HA Add-on' : '独立部署'}                    ║`);
-  console.log('╚═══════════════════════════════════════╝');
+  const ver = require('../config.json').version || '0.0.0';
+  console.log(`\n🔊 声必可网关 (AISpeaker Gateway) v${ver}`);
+  console.log(`   模式: ${IS_ADDON ? 'HA Add-on' : '独立部署'}\n`);
 
   // 1. 加载配置
   const config = loadConfig();
