@@ -1,8 +1,7 @@
-ARG BUILD_FROM=ghcr.io/home-assistant/base:latest
-FROM ${BUILD_FROM}
+FROM node:20-alpine
 
-# 安装 Node.js
-RUN apk add --no-cache nodejs npm
+# 安装 bashio（Add-on 模式需要 run.sh 调用）
+RUN apk add --no-cache bash curl jq
 
 # 复制应用代码
 WORKDIR /app

@@ -1,0 +1,36 @@
+{
+  "name": "声必可网关 (AISpeaker Gateway)",
+  "version": "1.0.1",
+  "slug": "aispeaker_gateway",
+  "description": "将 Home Assistant 设备桥接至声必可智能音箱，支持语音控制灯光、开关、窗帘、空调等设备",
+  "url": "https://github.com/yuanxin32323/aispeaker-gateway",
+  "image": "registry.cn-hangzhou.aliyuncs.com/yuanxin32323/aispeaker-gateway-{arch}",
+  "arch": [
+    "aarch64",
+    "amd64"
+  ],
+  "startup": "application",
+  "boot": "auto",
+  "init": false,
+  "host_network": true,
+  "homeassistant_api": true,
+  "hassio_api": true,
+  "auth_api": true,
+  "ingress": true,
+  "ingress_port": 3000,
+  "panel_icon": "mdi:speaker",
+  "panel_title": "声必可网关",
+  "options": {
+    "tcp_port": 8888,
+    "udp_port": 6666,
+    "log_level": "info"
+  },
+  "schema": {
+    "tcp_port": "port",
+    "udp_port": "port",
+    "log_level": "list(debug|info|warn|error)"
+  },
+  "map": [
+    "config:rw"
+  ]
+}

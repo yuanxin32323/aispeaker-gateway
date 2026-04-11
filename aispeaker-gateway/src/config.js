@@ -96,6 +96,11 @@ function loadConfig() {
       if (opts.log_level) config.logLevel = opts.log_level;
     }
 
+    // 环境变量备选（run.sh 设置）
+    if (process.env.TCP_PORT) config.gateway.tcpPort = parseInt(process.env.TCP_PORT);
+    if (process.env.UDP_PORT) config.gateway.udpPort = parseInt(process.env.UDP_PORT);
+    if (process.env.LOG_LEVEL) config.logLevel = process.env.LOG_LEVEL;
+
     // 自动检测 IP（容器内）
     if (!config.gateway.ip) {
       config.gateway.ip = detectLocalIp();
