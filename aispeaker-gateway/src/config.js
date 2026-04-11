@@ -19,10 +19,24 @@ const path = require('path');
 /** 判断是否运行在 Add-on 环境 */
 const IS_ADDON = !!process.env.SUPERVISOR_TOKEN;
 
-/** 配置文件路径 */
+/** 配置文件路径 — Add-on 模式存到 /config/ (HA config 目录，卸载不丢失) */
+const ADDON_CONFIG_DIR = '/config/aispeaker-gateway';
 const CONFIG_PATH = IS_ADDON
-  ? '/data/config.json'
+  ? path.join(ADDON_CONFIG_DIR, 'config.json')
   : path.join(__dirname, '..', 'config.json');
+
+// Add-on 模式：确保配置目录存在，并迁移旧配置
+if (IS_ADDON) {
+  if (!fs.existsSync(ADDON_CONFIG_DIR)) {
+    fs.mkdirSync(ADDON_CONFIG_DIR, { recursive: true });
+  }
+  // 从旧路径 /data/config.json 迁移
+  const OLD_PATH = '/data/config.json';
+  if (!fs.existsSync(CONFIG_PATH) && fs.existsSync(OLD_PATH)) {
+    fs.copyFileSync(OLD_PATH, CONFIG_PATH);
+    console.log(`[Config] 已从 ${OLD_PATH} 迁移到 ${CONFIG_PATH}`);
+  }
+}
 
 const DEFAULT_CONFIG = {
   ha: {
