@@ -131,6 +131,9 @@ async function main() {
     onConfigSaved: (newConfig) => {
       log.info('Main', '配置已更新，热重载');
       deviceManager.updateConfig(newConfig);
+      if (tcpServer) {
+        tcpServer.pushRefresh();
+      }
     }
   });
 

@@ -179,8 +179,10 @@ class DeviceManager {
 
       const entityConfig = (this.config.entities || {})[entityId] || {};
       const name = entityConfig.alias || state.attributes?.friendly_name || entityId;
-      const roomId = entityConfig.roomId || 1;
-      const floorId = entityConfig.floorId || this._getDefaultFloorId();
+      const rooms = this.getRooms();
+      const floors = this.getFloors();
+      const roomId = entityConfig.roomId || this._getDefaultRoomId(rooms);
+      const floorId = entityConfig.floorId || this._getDefaultFloorId(floors);
 
       let devType = DOMAIN_MAP[domain];
       const modeAttrs = [];
@@ -223,20 +225,41 @@ class DeviceManager {
   }
 
   getRooms() {
-    return Array.isArray(this.config.rooms) && this.config.rooms.length > 0
+    const rooms = Array.isArray(this.config.rooms) && this.config.rooms.length > 0
       ? this.config.rooms
       : [{ id: 1, name: '默认房间' }];
+
+    return rooms.map(room => {
+      const id = room.id ?? room.roomId;
+      const name = room.name ?? room.roomName;
+      return {
+        id,
+        name
+      };
+    });
   }
 
   getFloors() {
-    return Array.isArray(this.config.floors) && this.config.floors.length > 0
+    const floors = Array.isArray(this.config.floors) && this.config.floors.length > 0
       ? this.config.floors
       : [{ id: 101, name: '默认楼层' }];
+
+    return floors.map(floor => {
+      const id = floor.id ?? floor.floorId;
+      const name = floor.name ?? floor.floorName;
+      return {
+        id,
+        name
+      };
+    });
   }
 
-  _getDefaultFloorId() {
-    const floors = this.getFloors();
-    return floors[0]?.id || 101;
+  _getDefaultRoomId(rooms = this.getRooms()) {
+    return rooms[0]?.id || rooms[0]?.roomId || 1;
+  }
+
+  _getDefaultFloorId(floors = this.getFloors()) {
+    return floors[0]?.id || floors[0]?.floorId || 101;
   }
 
   getScenes() {
@@ -331,8 +354,14 @@ class DeviceManager {
     const results = [];
 
     for (const ctrl of controls) {
-      const entityId = ctrl.id || ctrl.Id;
-      if (!entityId) continue;
+      let entityId = ctrl.id || ctrl.Id;
+      if (!entityId) {
+        entityId = this._resolveEntityIdFromControl(ctrl);
+      }
+      if (!entityId) {
+        log.warn('DeviceManager', `无法识别控制目标: ${JSON.stringify(ctrl)}`);
+        continue;
+      }
       if (!this._isEntityEnabled(entityId)) {
         log.warn('DeviceManager', `拒绝控制未授权实体: ${entityId}`);
         continue;
@@ -458,6 +487,40 @@ class DeviceManager {
     }
 
     return results;
+  }
+
+  _resolveEntityIdFromControl(ctrl) {
+    const name = String(ctrl.name || ctrl.Name || '').trim();
+    if (!name) return '';
+
+    const floor = String(ctrl.floor || ctrl.Floor || '').trim();
+    const room = String(ctrl.room || ctrl.Room || '').trim();
+    const floorNames = new Map(this.getFloors().map(item => [String(item.id), item.name]));
+    const roomNames = new Map(this.getRooms().map(item => [String(item.id), item.name]));
+    let matches = this.getDevices().filter(device => String(device.deviceName) === name);
+
+    if (floor) {
+      matches = matches.filter(device =>
+        String(device.floorId) === floor || String(floorNames.get(String(device.floorId))) === floor
+      );
+    }
+
+    if (room) {
+      matches = matches.filter(device =>
+        String(device.roomId) === room || String(roomNames.get(String(device.roomId))) === room
+      );
+    }
+
+    if (matches.length === 1) {
+      log.info('DeviceManager', `通过名称/楼层/房间匹配控制目标: ${name} -> ${matches[0].deviceId}`);
+      return matches[0].deviceId;
+    }
+
+    if (matches.length > 1) {
+      log.warn('DeviceManager', `控制目标不唯一: ${name}, 匹配到 ${matches.length} 个设备`);
+    }
+
+    return '';
   }
 }
 

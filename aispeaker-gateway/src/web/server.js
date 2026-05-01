@@ -33,7 +33,15 @@ class WebServer {
   }
 
   _setupRoutes() {
-    this.app.use(express.json());
+    this.app.use(express.json({ limit: '10mb' }));
+
+    this.app.use((err, req, res, next) => {
+      if (err?.type === 'entity.too.large') {
+        log.warn('Web', '请求体过大，已拒绝保存配置');
+        return res.status(413).json({ error: '配置数据过大，请减少一次保存的设备数量或联系开发者调整限制' });
+      }
+      next(err);
+    });
 
     // Ingress 路径前缀中间件 — 去掉 ingress 前缀，让后续路由正常匹配
     this.app.use((req, res, next) => {

@@ -724,7 +724,14 @@
       showToast('至少保留一个楼层');
       return;
     }
+    const removedFloorId = config.floors[idx].id;
     config.floors.splice(idx, 1);
+    const fallbackFloorId = config.floors[0].id;
+    Object.values(config.entities || {}).forEach(entity => {
+      if (String(entity.floorId) === String(removedFloorId)) {
+        entity.floorId = fallbackFloorId;
+      }
+    });
     renderFloors();
     renderDevices();
     saveAll();

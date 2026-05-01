@@ -236,6 +236,24 @@ class TcpServer {
     }
   }
 
+  /**
+   * 通知音箱重新拉取设备/房间/楼层/场景数据
+   */
+  pushRefresh() {
+    if (this.clients.size === 0) return;
+
+    const resp = buildPackage('000f', {
+      type: 'RESPONSE_REFRESH'
+    });
+
+    for (const [client] of this.clients) {
+      if (!client.destroyed) {
+        this._enqueueWrite(client, resp);
+      }
+    }
+    log.info('TCP', `已通知 ${this.clients.size} 个音箱刷新设备数据`);
+  }
+
   stop() {
     for (const [client] of this.clients) {
       try { client.destroy(); } catch (e) { /* ignore */ }
