@@ -201,10 +201,13 @@ HA 看到新版本号但阿里云上还没有对应 tag 的镜像，拉取会失
 ### 5. 端口 6666 被旧 shengbike 集成占用
 HA 的 `.storage/core.config_entries` 中可能残留 shengbike 配置条目。需在 HA 设置 → 设备与服务中手动删除。
 
-### 6. 中文字符 padEnd 宽度问题
+### 6. 端口 6666 被 localtuya 占用
+`localtuya` 会在 HA Core 进程内监听 UDP `6666/6667` 做 Tuya 设备发现。声必可网关不能与 localtuya 共用同一个 UDP 监听端口；如需共存，修改声必可网关 `udp_port` 或关闭 localtuya 的发现监听。
+
+### 7. 中文字符 padEnd 宽度问题
 中文字符的显示宽度是 2，但 JS `padEnd` 按字符数计算。如果做对齐输出，避免对中文用 padEnd。
 
-### 7. Gitee 镜像仓库
+### 8. Gitee 镜像仓库
 国内用户可能用 Gitee 地址添加仓库。需确保 Gitee 和 GitHub 代码同步。当前 Gitee 地址：
 ```
 https://gitee.com/lisaoouba/aispeaker-gateway
