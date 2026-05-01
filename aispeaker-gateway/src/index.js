@@ -143,6 +143,7 @@ async function main() {
   log.info('Main', `  🏠 HA 连接: ${IS_ADDON ? '(Supervisor 代理)' : config.ha.url}`);
   log.info('Main', `  📦 已启用设备: ${deviceManager.getDevices().length} 个`);
   log.info('Main', `  🏘  房间数: ${deviceManager.getRooms().length} 个`);
+  log.info('Main', `  🏢 楼层数: ${deviceManager.getFloors().length} 个`);
 
   // 优雅退出
   const shutdown = () => {

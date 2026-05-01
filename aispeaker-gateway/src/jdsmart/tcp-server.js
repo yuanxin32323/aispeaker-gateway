@@ -163,9 +163,11 @@ class TcpServer {
       socket.write(resp);
 
     } else if (msgType === 'REQUEST_FLOOR') {
+      const floors = this.deviceManager.getFloors();
+      log.debug('TCP', `返回楼层列表: ${floors.length} 个`, floors);
       const resp = buildPackage('000c', {
         type: 'RESPONSE_FLOOR',
-        data: [{ id: 101, name: '默认楼层' }]
+        data: floors
       });
       socket.write(resp);
 
@@ -247,4 +249,3 @@ class TcpServer {
 }
 
 module.exports = TcpServer;
-

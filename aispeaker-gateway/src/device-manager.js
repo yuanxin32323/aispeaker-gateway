@@ -180,6 +180,7 @@ class DeviceManager {
       const entityConfig = (this.config.entities || {})[entityId] || {};
       const name = entityConfig.alias || state.attributes?.friendly_name || entityId;
       const roomId = entityConfig.roomId || 1;
+      const floorId = entityConfig.floorId || this._getDefaultFloorId();
 
       let devType = DOMAIN_MAP[domain];
       const modeAttrs = [];
@@ -206,7 +207,7 @@ class DeviceManager {
         deviceName: name,
         deviceType: devType,
         roomId,
-        floorId: 101,
+        floorId,
         state: deviceState,
         modeAttributes: modeAttrs
       };
@@ -222,7 +223,20 @@ class DeviceManager {
   }
 
   getRooms() {
-    return this.config.rooms || [{ id: 1, name: '默认房间' }];
+    return Array.isArray(this.config.rooms) && this.config.rooms.length > 0
+      ? this.config.rooms
+      : [{ id: 1, name: '默认房间' }];
+  }
+
+  getFloors() {
+    return Array.isArray(this.config.floors) && this.config.floors.length > 0
+      ? this.config.floors
+      : [{ id: 101, name: '默认楼层' }];
+  }
+
+  _getDefaultFloorId() {
+    const floors = this.getFloors();
+    return floors[0]?.id || 101;
   }
 
   getScenes() {

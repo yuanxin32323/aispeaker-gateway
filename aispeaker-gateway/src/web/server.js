@@ -63,10 +63,13 @@ class WebServer {
     this.app.put('/api/config', (req, res) => {
       try {
         const body = req.body;
+        const current = loadConfig();
         // Add-on 模式下不允许修改 HA 连接信息
         if (IS_ADDON) {
-          const current = loadConfig();
           body.ha = current.ha;
+        } else if (body.ha?.token === '***') {
+          // 前端读取到的是脱敏 token，保存非 HA 设置时保留原 token。
+          body.ha.token = current.ha.token;
         }
         saveConfig(body);
         if (this.onConfigSaved) {
@@ -111,6 +114,7 @@ class WebServer {
         cachedEntities: this.deviceManager ? this.deviceManager.stateCache.size : 0,
         enabledDevices: this.deviceManager ? this.deviceManager.getDevices().length : 0,
         rooms: this.deviceManager ? this.deviceManager.getRooms().length : 0,
+        floors: this.deviceManager ? this.deviceManager.getFloors().length : 0,
         isAddon: IS_ADDON
       });
     });

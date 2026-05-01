@@ -51,6 +51,9 @@ const DEFAULT_CONFIG = {
   rooms: [
     { id: 1, name: '默认房间' }
   ],
+  floors: [
+    { id: 101, name: '默认楼层' }
+  ],
   entities: {},
   filterMode: 'include' // include = 白名单, exclude = 黑名单
 };

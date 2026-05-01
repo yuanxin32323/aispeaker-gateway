@@ -383,12 +383,14 @@
     <span><span class="status-dot" id="haStatus"></span>HA: <span id="haStatusText">--</span></span>
     <span><span class="status-dot" id="speakerStatus"></span>音箱: <span id="speakerCount">0</span> 台</span>
     <span>设备: <span id="deviceCount">0</span> 个</span>
+    <span>楼层: <span id="floorCount">0</span> 个</span>
   </div>
 </div>
 
 <div class="tabs">
   <div class="tab active" data-tab="connection">🔌 连接设置</div>
   <div class="tab" data-tab="rooms">🏘 房间管理</div>
+  <div class="tab" data-tab="floors">🏢 楼层管理</div>
   <div class="tab" data-tab="devices">📱 设备管理</div>
 </div>
 
@@ -444,6 +446,18 @@
     </div>
   </div>
 
+  <!-- ── 楼层管理 ─── -->
+  <div class="panel" id="panel-floors">
+    <div class="card">
+      <div class="card-title">🏢 楼层列表</div>
+      <div class="room-tags" id="floorTags"></div>
+      <div class="room-input-row">
+        <input type="text" id="newFloorName" placeholder="输入楼层名称" onkeydown="if(event.key==='Enter')addFloor()">
+        <button class="btn btn-primary btn-sm" onclick="addFloor()">+ 添加</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ── 设备管理 ─── -->
   <div class="panel" id="panel-devices">
     <div class="card">
@@ -463,6 +477,7 @@
               <th>类型</th>
               <th>原始名称</th>
               <th>别名</th>
+              <th>楼层</th>
               <th>房间</th>
             </tr>
           </thead>
@@ -496,6 +511,7 @@
     ha: { url: '', token: '' },
     gateway: { ip: '', tcpPort: 8888, udpPort: 6666 },
     rooms: [{ id: 1, name: '默认房间' }],
+    floors: [{ id: 101, name: '默认楼层' }],
     entities: {},
     filterMode: 'include'
   };
@@ -506,6 +522,7 @@
   (async function init() {
     await loadConfig();
     renderRooms();
+    renderFloors();
     // 自动从 HA 拉取实体列表
     await loadEntities(true);
     refreshStatus();
@@ -522,11 +539,39 @@
     });
   });
 
+  function ensureLocationConfig() {
+    if (!Array.isArray(config.rooms) || config.rooms.length === 0) {
+      config.rooms = [{ id: 1, name: '默认房间' }];
+    }
+    if (!Array.isArray(config.floors) || config.floors.length === 0) {
+      config.floors = [{ id: 101, name: '默认楼层' }];
+    }
+  }
+
+  function nextNumericId(items, fallback) {
+    const maxId = items.reduce((max, item) => Math.max(max, Number(item.id) || 0), 0);
+    return Math.max(maxId + 1, fallback);
+  }
+
+  function selectedId(value) {
+    return /^\d+$/.test(String(value)) ? parseInt(value, 10) : value;
+  }
+
+  function escapeHtml(value) {
+    return String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
   // ── API ────────────────────────────
   async function loadConfig() {
     try {
       const resp = await fetch(apiUrl('/api/config'));
       config = await resp.json();
+      ensureLocationConfig();
 
       // Add-on 模式：隐藏 HA 连接表单，显示提示
       if (config.isAddon) {
@@ -552,6 +597,7 @@
     }
     config.gateway.ip = document.getElementById('gatewayIp').value;
     config.gateway.tcpPort = parseInt(document.getElementById('gatewayTcpPort').value) || 8888;
+    ensureLocationConfig();
 
     // 从设备表格收集配置
     collectDeviceConfig();
@@ -603,17 +649,19 @@
       spEl.className = status.speakerClients > 0 ? 'status-dot online' : 'status-dot offline';
       document.getElementById('speakerCount').textContent = status.speakerClients;
       document.getElementById('deviceCount').textContent = status.enabledDevices;
+      document.getElementById('floorCount').textContent = status.floors || config.floors.length;
     } catch (e) { /* ignore */ }
   }
 
   // ── Rooms ──────────────────────────
   function renderRooms() {
+    ensureLocationConfig();
     const container = document.getElementById('roomTags');
     container.innerHTML = '';
     (config.rooms || []).forEach((room, idx) => {
       const tag = document.createElement('div');
       tag.className = 'room-tag';
-      tag.innerHTML = `${room.name} <span class="remove" onclick="removeRoom(${idx})">×</span>`;
+      tag.innerHTML = `${escapeHtml(room.name)} <span class="remove" onclick="removeRoom(${idx})">×</span>`;
       container.appendChild(tag);
     });
   }
@@ -623,8 +671,7 @@
     const name = input.value.trim();
     if (!name) return;
 
-    const maxId = config.rooms.reduce((max, r) => Math.max(max, r.id), 0);
-    config.rooms.push({ id: maxId + 1, name });
+    config.rooms.push({ id: nextNumericId(config.rooms, 1), name });
     input.value = '';
     renderRooms();
     renderDevices(); // 更新设备表的房间下拉
@@ -638,8 +685,45 @@
     saveAll();
   }
 
+  // ── Floors ─────────────────────────
+  function renderFloors() {
+    ensureLocationConfig();
+    const container = document.getElementById('floorTags');
+    container.innerHTML = '';
+    (config.floors || []).forEach((floor, idx) => {
+      const tag = document.createElement('div');
+      tag.className = 'room-tag';
+      tag.innerHTML = `${escapeHtml(floor.name)} <span class="remove" onclick="removeFloor(${idx})">×</span>`;
+      container.appendChild(tag);
+    });
+  }
+
+  function addFloor() {
+    const input = document.getElementById('newFloorName');
+    const name = input.value.trim();
+    if (!name) return;
+
+    config.floors.push({ id: nextNumericId(config.floors, 101), name });
+    input.value = '';
+    renderFloors();
+    renderDevices();
+    saveAll();
+  }
+
+  function removeFloor(idx) {
+    if ((config.floors || []).length <= 1) {
+      showToast('至少保留一个楼层');
+      return;
+    }
+    config.floors.splice(idx, 1);
+    renderFloors();
+    renderDevices();
+    saveAll();
+  }
+
   // ── Devices ────────────────────────
   function renderDevices() {
+    ensureLocationConfig();
     const tbody = document.getElementById('deviceBody');
     tbody.innerHTML = '';
 
@@ -686,18 +770,26 @@
       const domainHtml = `<span class="domain-badge ${domain}">${domain}</span>`;
 
       // 原始名称
-      const nameHtml = `<div>${entity.friendly_name}</div><div class="entity-id">${entityId}</div>`;
+      const nameHtml = `<div>${escapeHtml(entity.friendly_name)}</div><div class="entity-id">${escapeHtml(entityId)}</div>`;
 
       // 别名
-      const aliasHtml = `<input type="text" data-field="alias" value="${ec.alias || ''}" placeholder="${entity.friendly_name}">`;
+      const aliasHtml = `<input type="text" data-field="alias" value="${escapeHtml(ec.alias || '')}" placeholder="${escapeHtml(entity.friendly_name)}">`;
+
+      // 楼层选择
+      const selectedFloorId = ec.floorId || config.floors[0].id;
+      let floorOpts = config.floors.map(f =>
+        `<option value="${escapeHtml(f.id)}" ${String(selectedFloorId) === String(f.id) ? 'selected' : ''}>${escapeHtml(f.name)}</option>`
+      ).join('');
+      const floorHtml = `<select data-field="floorId">${floorOpts}</select>`;
 
       // 房间选择
+      const selectedRoomId = ec.roomId || config.rooms[0].id;
       let roomOpts = config.rooms.map(r =>
-        `<option value="${r.id}" ${(ec.roomId || 1) === r.id ? 'selected' : ''}>${r.name}</option>`
+        `<option value="${escapeHtml(r.id)}" ${String(selectedRoomId) === String(r.id) ? 'selected' : ''}>${escapeHtml(r.name)}</option>`
       ).join('');
       const roomHtml = `<select data-field="roomId">${roomOpts}</select>`;
 
-      tr.innerHTML = `<td>${toggleHtml}</td><td>${domainHtml}</td><td>${nameHtml}</td><td>${aliasHtml}</td><td>${roomHtml}</td>`;
+      tr.innerHTML = `<td>${toggleHtml}</td><td>${domainHtml}</td><td>${nameHtml}</td><td>${aliasHtml}</td><td>${floorHtml}</td><td>${roomHtml}</td>`;
       tbody.appendChild(tr);
     }
   }
@@ -715,10 +807,11 @@
       const entityId = tr.dataset.entityId;
       const enabled = tr.querySelector('[data-field="enabled"]').checked;
       const alias = tr.querySelector('[data-field="alias"]').value.trim();
-      const roomId = parseInt(tr.querySelector('[data-field="roomId"]').value) || 1;
+      const floorId = selectedId(tr.querySelector('[data-field="floorId"]').value);
+      const roomId = selectedId(tr.querySelector('[data-field="roomId"]').value);
       // 保存 friendlyName 以便下次无 HA 连接时也能正确显示
       const friendlyName = tr.dataset.friendlyName || entityId;
-      entities[entityId] = { enabled, alias, roomId, friendlyName };
+      entities[entityId] = { enabled, alias, roomId, floorId, friendlyName };
     });
     config.entities = entities;
   }
