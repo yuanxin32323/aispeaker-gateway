@@ -198,9 +198,15 @@ docker compose up -d
 - Add-on 模式下 HA 连接是自动管理的，无需手动配置
 </details>
 
-## 📄 开源协议
+## 📄 使用许可
 
-MIT License
+本项目采用 [PolyForm Noncommercial License 1.0.0](./LICENSE)，属于源码可见的非商业许可，不是 OSI 意义上的开放源代码许可。
+
+个人学习、研究、非商业自用可免费使用。任何商业用途或牟利行为，包括收费部署、客户项目、托管服务、企业经营性使用、售卖插件/镜像/教程/技术支持等，都需要提前取得作者书面授权。
+
+商业授权请联系：200831913@qq.com
+
+更多说明见 [COMMERCIAL.md](./COMMERCIAL.md)。
 
 ## 🙏 致谢
 

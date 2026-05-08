@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "声必可网关 — Home Assistant 设备桥接",
   "main": "src/index.js",
+  "license": "SEE LICENSE IN LICENSE",
   "scripts": {
     "start": "node src/index.js",
     "dev": "node --watch src/index.js"
