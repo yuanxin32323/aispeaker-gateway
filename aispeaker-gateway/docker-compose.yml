@@ -10,6 +10,7 @@ services:
     network_mode: host    # UDP 广播发现需要宿主机网络
     volumes:
       - ./config.json:/app/config.json
+      - ./data:/app/data
     environment:
       - NODE_ENV=production
     logging:

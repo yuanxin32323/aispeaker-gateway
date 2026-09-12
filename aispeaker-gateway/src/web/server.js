@@ -12,6 +12,7 @@ const express = require('express');
 const path = require('path');
 const { loadConfig, saveConfig, IS_ADDON } = require('../config');
 const log = require('../logger');
+const auth = require('../auth');
 
 class WebServer {
   /**
@@ -34,6 +35,11 @@ class WebServer {
 
   _setupRoutes() {
     this.app.use(express.json({ limit: '10mb' }));
+    this.app.post('/api/login', (req,res)=>{ const r=auth.login(req.body?.username,req.body?.password); if(!r)return res.status(401).json({error:'账号或密码错误'}); res.setHeader('Set-Cookie',`sbk_session=${r.t}; HttpOnly; SameSite=Lax; Path=/`); res.json({success:true,mustChange:r.mustChange}); });
+    this.app.post('/api/logout', (req,res)=>{ res.setHeader('Set-Cookie','sbk_session=; Max-Age=0; HttpOnly; SameSite=Lax; Path=/'); res.json({success:true}); });
+    this.app.post('/api/change-password',(req,res)=>{ const s=auth.auth(req); if(!s)return res.status(401).json({error:'未登录'}); if(!auth.change(req.body?.oldPassword,req.body?.newPassword,s))return res.status(400).json({error:'旧密码错误或新密码至少 8 位'}); res.json({success:true}); });
+    this.app.use((req,res,next)=>{ if(req.path==='/api/login'||req.path==='/api/status')return next(); const s=auth.auth(req); if(!s)return req.path.startsWith('/api/')?res.status(401).json({error:'未登录'}):res.status(401).send(`<!doctype html><meta charset="utf-8"><title>声必可网关登录</title><style>body{font:16px sans-serif;max-width:380px;margin:12vh auto;padding:20px}input,button{display:block;width:100%;box-sizing:border-box;padding:12px;margin:10px 0}button{cursor:pointer;background:#0b6174;color:white;border:0;border-radius:6px}small{color:#667}</style><h2>声必可网关</h2><form onsubmit="go(event)"><label>账号<input id="u" value="admin" autocomplete="username"></label><label>密码<input id="p" type="password" autocomplete="current-password"></label><button>登录</button></form><p id="m"></p><script>async function go(e){e.preventDefault();let r=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u.value,password:p.value})});let x=await r.json();if(!r.ok)return m.textContent=x.error;location.href=x.mustChange?'/change-password':'/';}</script>`); if(s.mustChange&&req.path!=='/api/change-password'&&req.path!=='/change-password')return req.path.startsWith('/api/')?res.status(403).json({error:'首次登录必须修改密码'}):res.redirect('/change-password'); next(); });
+    this.app.get('/change-password',(req,res)=>{ if(!auth.auth(req))return res.redirect('/'); res.send(`<!doctype html><meta charset="utf-8"><title>设置密码</title><style>body{font:16px sans-serif;max-width:420px;margin:10vh auto;padding:20px}input,button{display:block;width:100%;box-sizing:border-box;padding:12px;margin:10px 0}button{background:#0b6174;color:#fff;border:0;border-radius:6px}#m{color:#b44}</style><h2>首次设置密码</h2><p>为了保护配置页面，请先设置新密码。</p><form onsubmit="go(event)"><input id="o" type="password" placeholder="当前密码" required><input id="n" type="password" placeholder="新密码（至少8位，含字母和数字）" required><input id="c" type="password" placeholder="确认新密码" required><button>保存新密码</button></form><p id="m"></p><script>async function go(e){e.preventDefault();if(n.value!==c.value)return m.textContent='两次新密码不一致';if(n.value.length<8||!/[A-Za-z]/.test(n.value)||!/\\d/.test(n.value))return m.textContent='新密码至少8位，且包含字母和数字';let r=await fetch('/api/change-password',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({oldPassword:o.value,newPassword:n.value})});let x=await r.json();if(!r.ok)return m.textContent=x.error;location.href='/';}</script>`); });
 
     this.app.use((err, req, res, next) => {
       if (err?.type === 'entity.too.large') {
